@@ -24,6 +24,19 @@ fn save_mod_record(record: &ModRecord, path: &str) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
+fn prompt_overwrite(file_name: &str) -> bool {
+    loop {
+        println!("File {} already exists. Do you want to overwrite it? [y/N]", file_name);
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        match input.trim().to_lowercase().as_str() {
+            "y" | "Y" | "yes" | "Yes" => return true,
+            "n" | "N" | "no" | "No" => return false,
+            _ => println!("Invalid choice. Please enter 'y' or 'n'."),
+        }
+    }
+}
+
 pub fn unarchive(config: &Config) {
     let dir_path = Path::new(&config.dir_path);
     let game_path = Path::new(&config.game_path);
@@ -51,6 +64,9 @@ pub fn unarchive(config: &Config) {
                             } else {
                                 game_path.join(file_path)
                             };
+                            if game_outpath.exists() && !prompt_overwrite(file.name()) {
+                                continue;
+                            }
                             mod_record.installed_files.push(game_outpath.to_str().unwrap().to_string());
                             if file.name().ends_with('/') {
                                 DirBuilder::new().recursive(true).create(&game_outpath).unwrap();

@@ -22,16 +22,18 @@ fn main() {
             1 => unarchive(&config),
             2 => uninstall_mod(),
             3 => break,
-            _ => println!("Invalid option"),
+            _ => print_colored(&["Invalid option"], &[RED], NewLine),
         }
     }
 }
 
 fn user_menu() -> usize {
-    println!("Choose an option:");
-    println!("1. Install new mods");
-    println!("2. Uninstall mods");
-    println!("3. Exit");
+    print_fancy(&[
+        ("Choose an option:\n", CYAN, vec![]),
+        ("1. ", BLUE, vec![]), ("Install Mods\n", GREEN, vec![]),
+        ("2. ", BLUE, vec![]), ("Uninstall Mods\n", YELLOW, vec![]),
+        ("3. ", BLUE, vec![]), ("Exit", VIOLET, vec![]),
+    ], NewLine);
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
     input.trim().parse().unwrap_or(0)
