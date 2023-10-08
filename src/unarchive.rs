@@ -24,14 +24,27 @@ fn save_mod_record(record: &ModRecord, path: &str) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-fn prompt_overwrite(file_name: &str) -> bool {
+fn get_original_mod(file_name: &str) -> Option<String> {
+    let records = load_mod_records("mod_records.json").unwrap_or_else(|_| Vec::new());
+    for record in &records {
+        if record.installed_files.contains(&file_name.to_string()) {
+            return Some(record.source_archive.clone());
+        }
+    }
+    None
+}
+
+fn prompt_overwrite(file_name: &str) -> Option<String> {
     loop {
         println!("File {} already exists. Do you want to overwrite it? [y/N]", file_name);
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         match input.trim().to_lowercase().as_str() {
-            "y" | "Y" | "yes" | "Yes" => return true,
-            "n" | "N" | "no" | "No" => return false,
+            "y" | "Y" | "yes" | "Yes" => {
+                let original_mod = get_original_mod(file_name);
+                return original_mod;
+            }
+            "n" | "N" | "no" | "No" => return None,
             _ => println!("Invalid choice. Please enter 'y' or 'n'."),
         }
     }
@@ -69,8 +82,8 @@ pub fn unarchive(config: &Config) {
                             } else {
                                 game_path.join(file_path)
                             };
-                            if game_outpath.exists() && !prompt_overwrite(file.name()) {
-                                continue;
+                            if let Some(original_mod) = prompt_overwrite(file.name()) {
+                                update_original_mod_record(&original_mod, file.name());
                             }
                             mod_record.installed_files.push(game_outpath.to_str().unwrap().to_string());
                             if file.name().ends_with('/') {
@@ -88,4 +101,16 @@ pub fn unarchive(config: &Config) {
             }
         }
     }
+}
+
+fn update_original_mod_record(original_mod: &str, overwritten_file: &str) {
+    let mut records = load_mod_records("mod_records.json").unwrap_or_else(|_| Vec::new());
+    for record in &mut records {
+        if record.source_archive == original_mod {
+            record.installed_files.retain(|file| file != overwritten_file);
+            break;
+        }
+    }
+    let file = File::create("mod_records.json").unwrap();
+    serde_json::to_writer(file, &records).unwrap();
 }
