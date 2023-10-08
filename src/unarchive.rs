@@ -52,6 +52,11 @@ pub fn unarchive(config: &Config) {
                     source_archive: path.to_str().unwrap().to_string(),
                     installed_files: Vec::new(),
                 };
+                let records = load_mod_records("mod_records.json").unwrap_or_else(|_| Vec::new());
+                if records.iter().any(|record| record.source_archive == mod_record.source_archive) {
+                    println!("Mod '{}' appears to already be installed.", mod_record.source_archive);
+                    continue;
+                }
                 match ext.to_str().unwrap() {
                     "zip" => {
                         let file = fs::File::open(&path).unwrap();
