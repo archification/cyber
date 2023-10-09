@@ -1,7 +1,9 @@
 use std::fs::{self, File, DirBuilder, /*OpenOptions*/};
 use std::path::Path;
+//use std::time::Instant;
 use serde_json;
 use zip::ZipArchive;
+//use sevenz_rust::decompress_with_extract_fn;
 /*
 use solarized::{
     print_colored, print_fancy, clear,
@@ -102,13 +104,52 @@ pub fn unarchive(config: &Config) {
                                 }
                             } else {
                                 if !game_outpath.parent().unwrap().exists() {
-                                    DirBuilder::new().recursive(true).create(game_outpath.parent().unwrap()).unwrap();
+                                    DirBuilder::new().recursive(true).create(game_outpath.parent()
+                                        .unwrap()).unwrap();
                                 }
                                 let mut outfile = fs::File::create(&game_outpath).unwrap();
                                 std::io::copy(&mut file, &mut outfile).unwrap();
                             }
                         }
                     },
+                    /*
+                    "7zip" | "7z" => {
+                        let file = File::open(&path).unwrap();
+                        decompress_with_extract_fn(file, |entry, reader, dest| {
+                            let game_outpath = if dest.is_absolute() {
+                                dest.to_owned()
+                            } else {
+                                game_path.join(dest)
+                            };
+                            if game_outpath.exists() {
+                                if let Some(original_mod) = prompt_overwrite(entry.name()) {
+                                    update_original_mod_record(&original_mod, entry.name());
+                                } else {
+                                    println!("Skipping overwrite for: {}", entry.name());
+                                    return Ok(());
+                                }
+                            }
+                            mod_record.installed_files.push(game_outpath.to_str().unwrap().to_string());
+                            if entry.is_dir() {
+                                if !game_outpath.exists() {
+                                    DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
+                                } else if let Some(_) = prompt_overwrite(entry.name()) {
+                                    DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
+                                } else {
+                                    return Ok(());
+                                }
+                            } else {
+                                if !game_outpath.parent().unwrap().exists() {
+                                    DirBuilder::new().recursive(true).create(game_outpath.parent()
+                                        .unwrap()).unwrap();
+                                }
+                                let mut outfile = File::create(&game_outpath).unwrap();
+                                std::io::copy(&mut reader, &mut outfile).unwrap();
+                            }
+                            Ok(())
+                        }).unwrap();
+                    },
+                    */
                     _ => {}
                 }
                 if !mod_record.installed_files.is_empty() {
