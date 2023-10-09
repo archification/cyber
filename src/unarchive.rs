@@ -58,9 +58,9 @@ pub fn unarchive(config: &Config) {
         let path = entry.path();
         if path.is_file() {
             if let Some(ext) = path.extension() {
-                let folder_name = path.file_stem().unwrap().to_str().unwrap();
-                let dest_path = dir_path.join(folder_name);
-                DirBuilder::new().recursive(true).create(&dest_path).unwrap();
+                //let folder_name = path.file_stem().unwrap().to_str().unwrap();
+                //let dest_path = dir_path.join(folder_name);
+                //DirBuilder::new().recursive(true).create(&dest_path).unwrap();
                 let mut mod_record = ModRecord {
                     source_archive: path.to_str().unwrap().to_string(),
                     installed_files: Vec::new(),
@@ -82,13 +82,27 @@ pub fn unarchive(config: &Config) {
                             } else {
                                 game_path.join(file_path)
                             };
-                            if let Some(original_mod) = prompt_overwrite(file.name()) {
-                                update_original_mod_record(&original_mod, file.name());
+                            if game_outpath.exists() {
+                                if let Some(original_mod) = prompt_overwrite(file.name()) {
+                                    update_original_mod_record(&original_mod, file.name());
+                                } else {
+                                    println!("Skipping overwrite for: {}", file.name());
+                                    continue;
+                                }
                             }
                             mod_record.installed_files.push(game_outpath.to_str().unwrap().to_string());
                             if file.name().ends_with('/') {
-                                DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
+                                if !game_outpath.exists() {
+                                    DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
+                                } else if let Some(_) = prompt_overwrite(file.name()) {
+                                    DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
+                                } else {
+                                    continue;
+                                }
                             } else {
+                                if !game_outpath.parent().unwrap().exists() {
+                                    DirBuilder::new().recursive(true).create(game_outpath.parent().unwrap()).unwrap();
+                                }
                                 let mut outfile = fs::File::create(&game_outpath).unwrap();
                                 std::io::copy(&mut file, &mut outfile).unwrap();
                             }
@@ -96,8 +110,10 @@ pub fn unarchive(config: &Config) {
                     },
                     _ => {}
                 }
-                println!("ModRecord: {:?}", mod_record);
-                save_mod_record(&mod_record, "mod_records.json").expect("Failed to save mod record");
+                if !mod_record.installed_files.is_empty() {
+                    println!("ModRecord: {:?}", mod_record);
+                    save_mod_record(&mod_record, "mod_records.json").expect("Failed to save mod record");
+                }
             }
         }
     }
