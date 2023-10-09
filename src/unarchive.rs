@@ -91,7 +91,8 @@ pub fn unarchive(config: &Config) {
                                 }
                             }
                             mod_record.installed_files.push(game_outpath.to_str().unwrap().to_string());
-                            if file.name().ends_with('/') {
+                            let file_path = Path::new(file.name());
+                            if file_path.is_dir() {
                                 if !game_outpath.exists() {
                                     DirBuilder::new().recursive(true).create(&game_outpath).unwrap();
                                 } else if let Some(_) = prompt_overwrite(file.name()) {
